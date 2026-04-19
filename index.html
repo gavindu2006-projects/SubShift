@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<title>SubShift — Subtitle Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --surface2: #1a1a26;
+    --border: #2a2a3d; --accent: #e8ff47; --accent2: #47b8ff;
+    --text: #f0f0f8; --muted: #6b6b8a; --danger: #ff6b6b; --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 60% 40% at 80% 10%, rgba(71,184,255,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 10% 80%, rgba(232,255,71,0.05) 0%, transparent 60%);
+  }
+  .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+  .logo { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .logo span { color: var(--accent); }
+  .tagline { font-size: 12px; color: var(--muted); margin-top: 4px; letter-spacing: 1px; }
+
+  .steps { display: flex; gap: 8px; margin-bottom: 40px; align-items: center; }
+  .step { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); letter-spacing: 0.5px; transition: color 0.3s; }
+  .step.active { color: var(--accent); }
+  .step.done { color: #47ffb8; }
+  .step-num { width: 22px; height: 22px; border-radius: 50%; border: 1px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .step-sep { flex: 1; height: 1px; background: var(--border); min-width: 20px; }
+
+  #upload-section { animation: fadeUp 0.5s ease both; }
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius); padding: 64px 32px;
+    text-align: center; cursor: pointer; transition: all 0.3s; background: var(--surface); position: relative; overflow: hidden;
+  }
+  .upload-zone::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(232,255,71,0.04), transparent 70%); opacity: 0; transition: opacity 0.3s; }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 20px 60px rgba(232,255,71,0.08); }
+  .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+  .upload-icon { font-size: 48px; margin-bottom: 16px; display: block; }
+  .upload-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .upload-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+  .upload-btn { display: inline-block; background: var(--accent); color: var(--bg); font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; padding: 10px 24px; border-radius: 6px; cursor: pointer; border: none; letter-spacing: 0.5px; transition: all 0.2s; }
+  .upload-btn:hover { background: #f5ff6e; transform: scale(1.03); }
+  .file-formats { margin-top: 16px; font-size: 11px; color: var(--muted); }
+  #file-input { display: none; }
+
+  #lang-section { display: none; animation: fadeUp 0.4s ease both; }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .file-info { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .file-info-name { font-weight: 500; color: var(--accent2); }
+  .file-info-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .free-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(71,255,184,0.08); border: 1px solid rgba(71,255,184,0.25); border-radius: 20px; padding: 6px 14px; font-size: 11px; color: #47ffb8; margin-bottom: 24px; }
+  .lang-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 28px; }
+  .lang-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .lang-card:hover { border-color: var(--accent2); background: var(--surface2); }
+  .lang-card.selected { border-color: var(--accent); background: rgba(232,255,71,0.06); color: var(--accent); }
+  .lang-flag { font-size: 20px; }
+  .translate-btn { background: var(--accent); color: var(--bg); font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; padding: 14px 32px; border-radius: var(--radius); border: none; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+  .translate-btn:hover { background: #f5ff6e; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,255,71,0.2); }
+  .translate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  #progress-section { display: none; animation: fadeUp 0.4s ease both; }
+  .progress-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px 32px; text-align: center; }
+  .progress-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .progress-sub { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+  .progress-bar-bg { background: var(--surface2); border-radius: 100px; height: 6px; overflow: hidden; margin-bottom: 12px; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 100px; width: 0%; transition: width 0.4s ease; }
+  .progress-count { font-size: 12px; color: var(--muted); }
+
+  #editor-section { display: none; animation: fadeUp 0.4s ease both; }
+  .editor-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .editor-info { font-size: 12px; color: var(--muted); }
+  .editor-info strong { color: var(--accent2); }
+  .toolbar-actions { display: flex; gap: 8px; }
+  .btn { font-family: 'DM Mono', monospace; font-size: 11px; padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; background: var(--surface); color: var(--text); transition: all 0.2s; }
+  .btn:hover { border-color: var(--muted); background: var(--surface2); }
+  .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .btn-primary:hover { background: #f5ff6e; }
+  .col-headers { display: grid; grid-template-columns: 60px 1fr 1fr 36px; gap: 8px; padding: 0 12px 10px; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .subtitle-list { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; padding-right: 4px; }
+  .subtitle-list::-webkit-scrollbar { width: 4px; }
+  .subtitle-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .subtitle-row { display: grid; grid-template-columns: 60px 1fr 1fr 36px; gap: 8px; align-items: start; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .subtitle-row.modified { border-color: rgba(71,184,255,0.4); }
+  .sub-index { font-size: 11px; color: var(--muted); padding-top: 6px; }
+  .sub-time { font-size: 9px; color: var(--muted); margin-top: 2px; }
+  .sub-text { font-size: 12px; line-height: 1.5; color: #a0a0c0; padding-top: 4px; }
+  .sub-edit { background: transparent; border: none; border-bottom: 1px solid transparent; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; line-height: 1.5; width: 100%; resize: none; outline: none; transition: border-color 0.2s; min-height: 36px; padding: 2px 0; }
+  .sub-edit:focus { border-bottom-color: var(--accent2); }
+  .sub-reset { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 4px; border-radius: 4px; transition: all 0.2s; align-self: center; }
+  .sub-reset:hover { color: var(--danger); }
+  .download-bar { background: var(--surface); border: 1px solid var(--border); border-top: 2px solid var(--accent); border-radius: var(--radius); padding: 20px 24px; margin-top: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .download-info strong { color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; }
+  .download-info span { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+  .download-actions { display: flex; gap: 8px; }
+  .toast { position: fixed; bottom: 24px; right: 24px; font-size: 12px; padding: 12px 20px; border-radius: 8px; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.3s; max-width: 340px; background: var(--danger); color: white; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.info { background: var(--accent2); color: var(--bg); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="logo">Sub<span>Shift</span></div>
+    <div class="tagline">// free subtitle translator · works on your PC</div>
+  </header>
+
+  <div class="steps">
+    <div class="step active" id="s1"><div class="step-num">1</div> UPLOAD</div>
+    <div class="step-sep"></div>
+    <div class="step" id="s2"><div class="step-num">2</div> LANGUAGE</div>
+    <div class="step-sep"></div>
+    <div class="step" id="s3"><div class="step-num">3</div> TRANSLATE</div>
+    <div class="step-sep"></div>
+    <div class="step" id="s4"><div class="step-num">4</div> EDIT & EXPORT</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="upload-section">
+    <div class="upload-zone" id="drop-zone">
+      <span class="upload-icon">🎬</span>
+      <div class="upload-title">Drop your subtitle file here</div>
+      <div class="upload-sub">or click to browse your files</div>
+      <label class="upload-btn" for="file-input">Choose File</label>
+      <input type="file" id="file-input" accept=".srt,.vtt">
+      <div class="file-formats">Supported: .srt · .vtt</div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="lang-section">
+    <div class="file-info">
+      <span style="font-size:24px">📄</span>
+      <div>
+        <div class="file-info-name" id="file-info-name">—</div>
+        <div class="file-info-meta" id="file-info-meta">—</div>
+      </div>
+    </div>
+    <div class="free-badge">✓ 100% Free &nbsp;·&nbsp; No API key needed &nbsp;·&nbsp; Works offline after load</div>
+    <div class="section-title">Select Target Language</div>
+    <div class="lang-grid" id="lang-grid"></div>
+    <button class="translate-btn" id="translate-btn" disabled>⚡ Translate Subtitles</button>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="progress-section">
+    <div class="progress-wrap">
+      <div class="progress-title">Translating...</div>
+      <div class="progress-sub" id="progress-sub">Preparing</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+      <div class="progress-count" id="progress-count">0 / 0 lines</div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div id="editor-section">
+    <div class="editor-toolbar">
+      <div class="editor-info"><strong id="editor-lang-label">—</strong> &nbsp;·&nbsp; <span id="editor-count-label">0 lines</span></div>
+      <div class="toolbar-actions">
+        <button class="btn" id="reset-all-btn">↺ Reset All</button>
+        <button class="btn" id="back-btn">← Change Language</button>
+      </div>
+    </div>
+    <div class="col-headers"><div>#</div><div>English (original)</div><div>Translation (editable)</div><div></div></div>
+    <div class="subtitle-list" id="subtitle-list"></div>
+    <div class="download-bar">
+      <div class="download-info">
+        <strong>Ready to export!</strong>
+        <span>Download your translated subtitle file</span>
+      </div>
+      <div class="download-actions">
+        <button class="btn btn-primary" id="dl-srt">⬇ Download .srt</button>
+        <button class="btn" id="dl-vtt">⬇ Download .vtt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LANGUAGES = [
+  { code: 'es', name: 'Spanish',    flag: '🇪🇸' },
+  { code: 'fr', name: 'French',     flag: '🇫🇷' },
+  { code: 'de', name: 'German',     flag: '🇩🇪' },
+  { code: 'zh', name: 'Chinese',    flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese',   flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean',     flag: '🇰🇷' },
+  { code: 'ar', name: 'Arabic',     flag: '🇸🇦' },
+  { code: 'si', name: 'Sinhala',    flag: '🇱🇰' },
+  { code: 'hi', name: 'Hindi',      flag: '🇮🇳' },
+  { code: 'ru', name: 'Russian',    flag: '🇷🇺' },
+];
+
+// MyMemory language codes (some differ from standard)
+const LANG_CODE_MAP = {
+  'es': 'es', 'fr': 'fr', 'de': 'de', 'zh': 'zh-CN',
+  'ja': 'ja', 'ko': 'ko', 'ar': 'ar', 'si': 'si',
+  'hi': 'hi', 'ru': 'ru'
+};
+
+let parsedSubs = [], translatedSubs = [], selectedLang = null, fileName = '';
+
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type === 'info' ? ' info' : '');
+  setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('s' + i).className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+  }
+}
+
+// ── PARSERS ──
+function parseSRT(text) {
+  return text.trim().split(/\n\s*\n/).reduce((acc, block) => {
+    const lines = block.trim().split('\n');
+    if (lines.length < 2) return acc;
+    const time = lines[1].trim();
+    if (!time.includes('-->')) return acc;
+    const textLines = lines.slice(2).map(l => l.replace(/<[^>]+>/g, '').trim()).filter(Boolean);
+    if (textLines.length) acc.push({ index: lines[0].trim(), time, lines: textLines });
+    return acc;
+  }, []);
+}
+
+function parseVTT(text) {
+  let idx = 1;
+  return text.replace(/^WEBVTT[^\n]*\n/, '').trim().split(/\n\s*\n/).reduce((acc, block) => {
+    const lines = block.trim().split('\n');
+    let ti = lines[0].includes('-->') ? 0 : 1;
+    const time = lines[ti];
+    if (!time || !time.includes('-->')) return acc;
+    const textLines = lines.slice(ti+1).map(l => l.replace(/<[^>]+>/g,'').trim()).filter(Boolean);
+    if (textLines.length) { acc.push({ index: ti === 0 ? String(idx) : lines[0], time, lines: textLines }); idx++; }
+    return acc;
+  }, []);
+}
+
+// ── UPLOAD ──
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['srt','vtt'].includes(ext)) { toast('Please upload a .srt or .vtt file'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      parsedSubs = ext === 'srt' ? parseSRT(e.target.result) : parseVTT(e.target.result);
+      if (!parsedSubs.length) { toast('Could not read subtitles from this file'); return; }
+      fileName = file.name.replace(/\.[^.]+$/, '');
+      document.getElementById('file-info-name').textContent = file.name;
+      document.getElementById('file-info-meta').textContent = parsedSubs.length + ' subtitle lines · ' + (file.size/1024).toFixed(1) + ' KB · .' + ext.toUpperCase();
+      hide('upload-section'); show('lang-section'); setStep(2); buildLangGrid();
+    } catch(err) { toast('Error reading file: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+// ── LANGUAGE ──
+function buildLangGrid() {
+  const grid = document.getElementById('lang-grid');
+  grid.innerHTML = '';
+  LANGUAGES.forEach(lang => {
+    const card = document.createElement('div');
+    card.className = 'lang-card';
+    card.innerHTML = '<span class="lang-flag">' + lang.flag + '</span>' + lang.name;
+    card.onclick = () => {
+      document.querySelectorAll('.lang-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedLang = lang;
+      document.getElementById('translate-btn').disabled = false;
+    };
+    grid.appendChild(card);
+  });
+}
+document.getElementById('translate-btn').addEventListener('click', startTranslation);
+
+async function translateLine(text, targetCode) {
+  const langPair = 'en|' + targetCode;
+  const url = 'https://api.mymemory.translated.net/get?q=gavindukavishka.yt@gmail.com' + encodeURIComponent(text) + '&langpair=' + langPair;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Network error');
+  const data = await res.json();
+  if (data.responseStatus === 200) return data.responseData.translatedText;
+  throw new Error(data.responseDetails || 'Translation failed');
+}
+
+async function startTranslation() {
+  if (!selectedLang) return;
+  hide('lang-section'); show('progress-section'); setStep(3);
+
+  const total = parsedSubs.length;
+  translatedSubs = parsedSubs.map(s => ({ ...s, translated: [...s.lines], original_translated: null }));
+
+  const fillBar = document.getElementById('progress-fill');
+  const countEl = document.getElementById('progress-count');
+  const subEl   = document.getElementById('progress-sub');
+  const targetCode = LANG_CODE_MAP[selectedLang.code] || selectedLang.code;
+
+  subEl.textContent = 'Translating to ' + selectedLang.name + '...';
+
+  let errorCount = 0;
+  for (let i = 0; i < total; i++) {
+    try {
+      const text = parsedSubs[i].lines.join(' ');
+      const translated = await translateLine(text, targetCode);
+
+      // Split back into lines if original had multiple
+      if (parsedSubs[i].lines.length > 1) {
+        const words = translated.split(' ');
+        const mid = Math.ceil(words.length / 2);
+        translatedSubs[i].translated = [words.slice(0,mid).join(' '), words.slice(mid).join(' ')].filter(Boolean);
+      } else {
+        translatedSubs[i].translated = [translated];
+      }
+    } catch(e) {
+      errorCount++;
+      // Keep original text on error
+      translatedSubs[i].translated = [...parsedSubs[i].lines];
+    }
+
+    translatedSubs[i].original_translated = [...translatedSubs[i].translated];
+
+    fillBar.style.width = Math.round((i+1)/total*100) + '%';
+    countEl.textContent = (i+1) + ' / ' + total + ' lines';
+
+    // Small delay to avoid rate limiting (MyMemory limit)
+    await new Promise(r => setTimeout(r, 120));
+  }
+
+  if (errorCount > 0) toast(errorCount + ' lines could not be translated (kept original)', 'error');
+
+  hide('progress-section'); show('editor-section'); setStep(4); buildEditor();
+}
+
+// ── EDITOR ──
+function buildEditor() {
+  document.getElementById('editor-lang-label').textContent = selectedLang.flag + ' ' + selectedLang.name;
+  document.getElementById('editor-count-label').textContent = translatedSubs.length + ' lines';
+  const list = document.getElementById('subtitle-list');
+  list.innerHTML = '';
+  translatedSubs.forEach((sub, i) => {
+    const row = document.createElement('div');
+    row.className = 'subtitle-row';
+    const startTime = sub.time.split(' --> ')[0].replace(',','.').substring(0,8);
+    row.innerHTML =
+      '<div><div class="sub-index">#' + sub.index + '</div><div class="sub-time">' + startTime + '</div></div>' +
+      '<div class="sub-text">' + sub.lines.join('<br>') + '</div>' +
+      '<textarea class="sub-edit" rows="' + Math.max(sub.translated.length,1) + '">' + sub.translated.join('\n') + '</textarea>' +
+      '<button class="sub-reset" title="Reset">↺</button>';
+    const ta = row.querySelector('.sub-edit');
+    const rb = row.querySelector('.sub-reset');
+    ta.addEventListener('input', () => { row.classList.add('modified'); translatedSubs[i].translated = ta.value.split('\n'); });
+    rb.addEventListener('click', () => { ta.value = translatedSubs[i].original_translated.join('\n'); translatedSubs[i].translated = [...translatedSubs[i].original_translated]; row.classList.remove('modified'); });
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('reset-all-btn').onclick = () => { translatedSubs.forEach(s => { s.translated = [...s.original_translated]; }); buildEditor(); toast('All edits reset', 'info'); };
+document.getElementById('back-btn').onclick = () => { hide('editor-section'); show('lang-section'); setStep(2); selectedLang = null; document.querySelectorAll('.lang-card').forEach(c => c.classList.remove('selected')); document.getElementById('translate-btn').disabled = true; };
+
+// ── DOWNLOAD ──
+document.getElementById('dl-srt').onclick = () => dl('srt');
+document.getElementById('dl-vtt').onclick = () => dl('vtt');
+function dl(fmt) {
+  const content = fmt === 'srt'
+    ? translatedSubs.map(s => s.index + '\n' + s.time + '\n' + s.translated.join('\n')).join('\n\n') + '\n'
+    : 'WEBVTT\n\n' + translatedSubs.map(s => s.index + '\n' + s.time.replace(/,/g,'.') + '\n' + s.translated.join('\n')).join('\n\n') + '\n';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+  a.download = fileName + '_' + selectedLang.code + '.' + fmt;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Downloaded ' + a.download, 'info');
+}
+</script>
+</body>
+</html>
