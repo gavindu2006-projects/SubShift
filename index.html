@@ -833,7 +833,7 @@ document.getElementById('translate-btn').addEventListener('click', startTranslat
 // ── TRANSLATION ─────────────────────────────────────────────────────────
 // Single line translation via MyMemory
 async function translateText(text, fromMM, toMM) {
-  const url = 'https://api.mymemory.translated.net/get?q=gavindukavishka.yt@gmail.com'
+  const url = 'https://api.mymemory.translated.net/get?q='
     + encodeURIComponent(text)
     + '&langpair=' + encodeURIComponent(fromMM + '|' + toMM);
   const res = await fetch(url);
