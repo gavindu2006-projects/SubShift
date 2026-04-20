@@ -1,156 +1,221 @@
-🚀 SubShift — Subtitle Translator
+You’re right — the previous ones were breaking because of extra code block markers.
 
-SubShift is a modern, browser-based subtitle translator that allows you to upload .srt or .vtt files, automatically detect the language, translate subtitles, edit them in real-time, and export the final result — all without installing anything.
+Here is a **fully correct, single-block, clean `README.md`**.
+👉 Just **copy everything below exactly and paste into your README.md file**.
 
-⚡ Works entirely in your browser
-🎬 Designed for creators, editors, and learners
-🌐 Powered by free translation API
+---
 
-✨ Features
-📁 File Upload
-Drag & drop or click to upload subtitle files
-Supports:
-.srt
-.vtt
-🌍 Automatic Language Detection
-Detects source language using API
-Uses first few subtitle lines for accuracy
-Option to manually override detected language
-🔤 Multi-Language Support
-Translate between major languages:
-English
-Chinese
-Spanish
-Hindi
-Arabic
-French
-Russian
-Portuguese
-German
-Japanese
-⚡ Fast Translation
-Translates subtitles line-by-line
-Shows live progress bar
-Handles API limits with smart delays
-Fallback: keeps original text if translation fails
-✏️ Built-in Subtitle Editor
-View original + translated text side-by-side
-Edit translations directly
-Reset individual lines or all edits
-Clean and responsive UI
-📥 Export Options
-Download translated subtitles as:
-.srt
-.vtt
+# 🎬 SubShift — Subtitle Translator
 
-File naming format:
+> ⚡ Translate, edit, and export subtitles directly in your browser — fast, simple, and free.
 
+---
+
+## 🌟 Overview
+
+**SubShift** is a lightweight, fully client-side subtitle translator that supports `.srt` and `.vtt` files. It automatically detects the source language, translates subtitles into your desired language, and allows real-time editing before export.
+
+✅ No installation
+✅ No backend
+✅ Works directly in your browser
+
+---
+
+## ✨ Features
+
+### 📁 Upload Subtitles
+
+* Drag & drop support
+* Click to upload
+* Supported formats: `.srt`, `.vtt`
+
+---
+
+### 🌍 Auto Language Detection
+
+* Detects subtitle language automatically
+* Uses first few lines for better accuracy
+* Option to manually change detected language
+
+---
+
+### 🔤 Multi-Language Translation
+
+Supports major languages:
+
+* 🇺🇸 English
+* 🇨🇳 Chinese
+* 🇪🇸 Spanish
+* 🇮🇳 Hindi
+* 🇸🇦 Arabic
+* 🇫🇷 French
+* 🇷🇺 Russian
+* 🇧🇷 Portuguese
+* 🇩🇪 German
+* 🇯🇵 Japanese
+
+---
+
+### ⚡ Smart Translation Engine
+
+* Translates subtitle line-by-line
+* Handles multi-line subtitles
+* Shows live progress bar
+* Keeps original text if translation fails
+
+---
+
+### ✏️ Built-in Subtitle Editor
+
+* View original and translated text side-by-side
+* Edit translations directly
+* Reset individual lines or entire file
+
+---
+
+### 📥 Export Options
+
+Download translated subtitles as `.srt` or `.vtt`
+
+**File naming format:**
+
+```
 filename_source-target.srt
-🖥️ Demo Workflow
-Upload subtitle file
-Auto-detect language
-Select target language
-Translate subtitles
-Edit if needed
-Download final file
-🧠 How It Works
-1. Parsing
-Reads subtitle structure from .srt / .vtt
-Extracts:
-Index
-Timestamp
-Text lines
-2. Language Detection
+```
 
-Uses:
+---
 
-MyMemory Translation API (autodetect)
-3. Translation
-Sends requests per subtitle line
-Combines multi-line subtitles intelligently
-Splits translated text back into lines
-4. Editing System
-Stores:
-Original translation
-User-edited version
-Allows reset anytime
-5. Export
-Rebuilds subtitle file format
-Preserves timing and structure
-🛠️ Tech Stack
-HTML5
-CSS3 (Modern UI with variables)
-Vanilla JavaScript (No frameworks)
-MyMemory Translation API
-📂 Project Structure
+## 🖥️ How to Use
+
+1. Upload your subtitle file
+2. Wait for language detection
+3. Select target language
+4. Click **Translate**
+5. Edit translations if needed
+6. Download final subtitle file
+
+---
+
+## 🛠️ Tech Stack
+
+* HTML5
+* CSS3
+* Vanilla JavaScript
+* MyMemory Translation API
+
+---
+
+## 📂 Project Structure
+
+```
 SubShift/
 │
-├── index.html        # Main application (UI + logic)
+├── index.html        # Main app (UI + logic)
 ├── favicon.png       # App icon
-└── README.md         # Project documentation
-🚀 Getting Started
-1. Clone or Download
+└── README.md         # Documentation
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone Repository
+
+```bash
 git clone https://github.com/your-username/subshift.git
-2. Open in Browser
+```
 
-Just open:
+### 2. Open Project
 
-index.html
+Open `index.html` in your browser.
 
-No server required ✅
+No server required 🎉
 
-🌐 Hosting
+---
+
+## 🌐 Hosting
 
 You can host this project for free using:
 
-GitHub Pages
-Netlify
-Vercel
-GitHub Pages Steps:
-Upload repo
-Rename main file to index.html (already done ✅)
-Enable Pages in repo settings
-⚠️ Limitations
-Depends on MyMemory API limits
-Slower for large subtitle files
-Internet connection required
-Translation quality depends on API
-💡 Pro Tip
+* GitHub Pages
+* Netlify
+* Vercel
 
-You can increase free API usage by adding your email:
+### GitHub Pages Setup
 
+1. Upload project to GitHub
+2. Make sure file name is `index.html`
+3. Go to **Settings → Pages**
+4. Enable deployment
+
+---
+
+## ⚠️ Limitations
+
+* Depends on free translation API limits
+* Slower for large subtitle files
+* Requires internet connection
+* Translation quality depends on API
+
+---
+
+## 💡 Pro Tip
+
+Increase free API usage by adding your email:
+
+```
 ?de=youremail@gmail.com
-🔒 Privacy
-Files are processed locally in your browser
-Only text is sent to translation API
-No file uploads to servers
-🎯 Use Cases
-🎬 Movie subtitle translation
-📺 YouTube subtitle editing
-🌍 Language learning
-🧑‍💻 Content localization
-📸 UI Highlights
-Dark modern theme 🌙
-Smooth animations
-Step-by-step workflow
-Responsive layout
-🧩 Future Improvements
-🔥 Batch translation optimization
-🌐 More language support
-💾 Save projects locally
-🤖 AI-powered translation (OpenAI / DeepL)
-📱 Mobile optimization
-👨‍💻 Author
+```
 
-Gavindu Kavishka
+---
 
-⭐ Support
+## 🔒 Privacy
+
+* Files are processed locally in your browser
+* Only subtitle text is sent to translation API
+* No file uploads to any server
+
+---
+
+## 🎯 Use Cases
+
+* 🎬 Movie subtitle translation
+* 📺 YouTube subtitle editing
+* 🌍 Language learning
+* 🧑‍💻 Content localization
+
+---
+
+## 🧩 Future Improvements
+
+* Faster batch translation
+* More language support
+* Save projects locally
+* AI translation (OpenAI / DeepL)
+* Mobile optimization
+
+---
+
+## 👨‍💻 Author
+
+**Gavindu Kavishka**
+
+---
+
+## ⭐ Support
 
 If you like this project:
 
-⭐ Star the repo
-🍴 Fork it
-🛠️ Improve it
-📜 License
+* ⭐ Star the repo
+* 🍴 Fork it
+* 🛠️ Improve it
 
-This project is free to use for personal and educational purposes.
+---
+
+## 📜 License
+
+Free for personal and educational use.
+
+---
+
+If this still breaks when pasting, tell me where you're pasting (GitHub web editor, VS Code, etc.), and I’ll fix it for that exact case.
