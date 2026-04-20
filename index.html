@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<title>SubShift — Subtitle Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3d;
+    --accent: #e8ff47;
+    --accent2: #47b8ff;
+    --text: #f0f0f8;
+    --muted: #6b6b8a;
+    --danger: #ff6b6b;
+    --success: #47ffb8;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(71,184,255,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 10% 80%, rgba(232,255,71,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  header {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .logo span { color: var(--accent); }
+  .tagline { font-size: 12px; color: var(--muted); margin-top: 4px; letter-spacing: 1px; }
+
+  .steps {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    align-items: center;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    transition: color 0.3s;
+  }
+  .step.active { color: var(--accent); }
+  .step.done { color: var(--success); }
+  .step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .step-sep { flex: 1; height: 1px; background: var(--border); min-width: 20px; }
+
+  /* UPLOAD ZONE */
+  #upload-section { animation: fadeUp 0.5s ease both; }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 64px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(232,255,71,0.04) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 60px rgba(232,255,71,0.08);
+  }
+  .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+  .upload-icon { font-size: 48px; margin-bottom: 16px; display: block; }
+  .upload-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .upload-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+  .upload-btn {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+  .upload-btn:hover { background: #f5ff6e; transform: scale(1.03); }
+  .file-formats { margin-top: 16px; font-size: 11px; color: var(--muted); }
+  #file-input { display: none; }
+
+  /* LANGUAGE SELECT */
+  #lang-section { display: none; animation: fadeUp 0.4s ease both; }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .file-info {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .file-info-icon { font-size: 24px; }
+  .file-info-name { font-weight: 500; color: var(--accent2); }
+  .file-info-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Detected language badge */
+  .detected-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .detected-bar-left { display: flex; align-items: center; gap: 10px; }
+  .detected-label { font-size: 11px; color: var(--muted); margin-right: 4px; }
+  .detected-lang { font-weight: 500; color: var(--accent); font-size: 14px; }
+  .detected-note { font-size: 11px; color: var(--muted); }
+  .change-source-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .change-source-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* source override picker */
+  .source-picker {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--accent2);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  .source-picker.open { display: block; }
+  .source-picker-title { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .source-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+  }
+  .source-pick-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+  .source-pick-card:hover { border-color: var(--accent2); color: var(--accent2); }
+  .source-pick-card.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,71,0.05); }
+
+  .lang-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .lang-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    position: relative;
+  }
+  .lang-card:hover:not(.source-card) { border-color: var(--accent2); background: var(--surface2); }
+  .lang-card.selected { border-color: var(--accent); background: rgba(232,255,71,0.06); color: var(--accent); }
+  .lang-card.source-card {
+    border-color: var(--success);
+    background: rgba(71,255,184,0.04);
+    color: var(--success);
+    cursor: default;
+    opacity: 0.7;
+  }
+  .lang-flag { font-size: 20px; }
+  .source-tag {
+    position: absolute;
+    top: -1px; right: -1px;
+    background: var(--success);
+    color: var(--bg);
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 0 var(--radius) 0 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .translate-btn {
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 14px 32px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .translate-btn:hover { background: #f5ff6e; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,255,71,0.2); }
+  .translate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* PROGRESS */
+  #progress-section { display: none; animation: fadeUp 0.4s ease both; }
+  .progress-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+  }
+  .progress-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .progress-sub { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+  .progress-bar-bg {
+    background: var(--surface2);
+    border-radius: 100px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .progress-count { font-size: 12px; color: var(--muted); }
+
+  /* EDITOR */
+  #editor-section { display: none; animation: fadeUp 0.4s ease both; }
+
+  .editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .editor-info { font-size: 12px; color: var(--muted); }
+  .editor-info strong { color: var(--accent2); }
+  .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--text);
+    letter-spacing: 0.3px;
+    transition: all 0.2s;
+  }
+  .btn:hover { border-color: var(--muted); background: var(--surface2); }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: #f5ff6e; border-color: #f5ff6e; }
+
+  .col-headers {
+    display: grid;
+    grid-template-columns: 60px 1fr 1fr 36px;
+    gap: 8px;
+    padding: 0 12px 10px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .subtitle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .subtitle-list::-webkit-scrollbar { width: 4px; }
+  .subtitle-list::-webkit-scrollbar-track { background: transparent; }
+  .subtitle-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .subtitle-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 1fr 36px;
+    gap: 8px;
+    align-items: start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: border-color 0.2s;
+  }
+  .subtitle-row.modified { border-color: rgba(71,184,255,0.4); }
+
+  .sub-index {
+    font-size: 11px;
+    color: var(--muted);
+    padding-top: 6px;
+    font-weight: 500;
+  }
+  .sub-time {
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .sub-text {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #a0a0c0;
+    padding-top: 4px;
+  }
+
+  .sub-edit {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    width: 100%;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    min-height: 40px;
+    padding: 2px 0;
+  }
+  .sub-edit:focus { border-bottom-color: var(--accent2); }
+
+  .sub-reset {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    align-self: center;
+  }
+  .sub-reset:hover { color: var(--danger); background: rgba(255,107,107,0.1); }
+
+  .download-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .download-info { font-size: 13px; }
+  .download-info strong { color: var(--accent); font-family: 'Syne', sans-serif; }
+  .download-info span { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+  .download-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--danger);
+    color: white;
+    font-size: 12px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.info { background: var(--accent2); color: var(--bg); }
+  .toast.ok { background: var(--success); color: var(--bg); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <header>
+    <div class="logo">Sub<span>Shift</span></div>
+    <div class="tagline">// subtitle translator · free · works on your PC</div>
+  </header>
+
+  <div class="steps">
+    <div class="step active" id="s1"><div class="step-num">1</div> UPLOAD</div>
+    <div class="step-sep"></div>
+    <div class="step" id="s2"><div class="step-num">2</div> LANGUAGE</div>
+    <div class="step-sep"></div>
+    <div class="step" id="s3"><div class="step-num">3</div> TRANSLATE</div>
+    <div class="step-sep"></div>
+    <div class="step" id="s4"><div class="step-num">4</div> EDIT & EXPORT</div>
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div id="upload-section">
+    <div class="upload-zone" id="drop-zone">
+      <span class="upload-icon">🎬</span>
+      <div class="upload-title">Drop your subtitle file here</div>
+      <div class="upload-sub">or click to browse your files</div>
+      <label class="upload-btn" for="file-input">Choose File</label>
+      <input type="file" id="file-input" accept=".srt,.vtt">
+      <div class="file-formats">Supported: .srt · .vtt</div>
+    </div>
+  </div>
+
+  <!-- STEP 2: LANGUAGE -->
+  <div id="lang-section">
+
+    <div class="file-info">
+      <span class="file-info-icon">📄</span>
+      <div>
+        <div class="file-info-name" id="file-info-name">—</div>
+        <div class="file-info-meta" id="file-info-meta">—</div>
+      </div>
+    </div>
+
+    <!-- detected language bar -->
+    <div class="detected-bar" id="detected-bar">
+      <div class="detected-bar-left">
+        <span>🔍</span>
+        <div>
+          <span class="detected-label">Detected language:</span>
+          <span class="detected-lang" id="detected-lang-display">Detecting...</span>
+          <div class="detected-note" id="detected-note"></div>
+        </div>
+      </div>
+      <button class="change-source-btn" id="change-source-btn">✏️ Not correct?</button>
+    </div>
+
+    <!-- source override picker (hidden by default) -->
+    <div class="source-picker" id="source-picker">
+      <div class="source-picker-title">Select the correct source language:</div>
+      <div class="source-picker-grid" id="source-picker-grid"></div>
+    </div>
+
+    <div class="section-title" id="target-title">Select Target Language</div>
+
+    <div class="lang-grid" id="lang-grid"></div>
+
+    <button class="translate-btn" id="translate-btn" disabled>
+      <span>⚡</span> Translate Subtitles
+    </button>
+  </div>
+
+  <!-- STEP 3: PROGRESS -->
+  <div id="progress-section">
+    <div class="progress-wrap">
+      <div class="progress-title">Translating...</div>
+      <div class="progress-sub" id="progress-sub">Preparing subtitles</div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-count" id="progress-count">0 / 0 lines</div>
+    </div>
+  </div>
+
+  <!-- STEP 4: EDITOR -->
+  <div id="editor-section">
+    <div class="editor-toolbar">
+      <div class="editor-info">
+        <strong id="editor-lang-label">—</strong> · <span id="editor-count-label">0 lines</span>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn" id="reset-all-btn">↺ Reset All</button>
+        <button class="btn" id="back-btn">← Change Language</button>
+      </div>
+    </div>
+
+    <div class="col-headers">
+      <div>#</div>
+      <div>Original</div>
+      <div>Translation (editable)</div>
+      <div></div>
+    </div>
+
+    <div class="subtitle-list" id="subtitle-list"></div>
+
+    <div class="download-bar">
+      <div class="download-info">
+        <strong>Ready to export!</strong>
+        <span>Download your translated subtitle file</span>
+      </div>
+      <div class="download-actions">
+        <button class="btn btn-primary" id="dl-srt">⬇ Download .srt</button>
+        <button class="btn" id="dl-vtt">⬇ Download .vtt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── LANGUAGES ──────────────────────────────────────────────────────────
+const LANGUAGES = [
+  { code: 'en', mm: 'en-US', name: 'English',    flag: '🇺🇸' },
+  { code: 'zh', mm: 'zh-CN', name: 'Chinese',    flag: '🇨🇳' },
+  { code: 'es', mm: 'es-ES', name: 'Spanish',    flag: '🇪🇸' },
+  { code: 'hi', mm: 'hi-IN', name: 'Hindi',      flag: '🇮🇳' },
+  { code: 'ar', mm: 'ar-SA', name: 'Arabic',     flag: '🇸🇦' },
+  { code: 'fr', mm: 'fr-FR', name: 'French',     flag: '🇫🇷' },
+  { code: 'ru', mm: 'ru-RU', name: 'Russian',    flag: '🇷🇺' },
+  { code: 'pt', mm: 'pt-BR', name: 'Portuguese', flag: '🇧🇷' },
+  { code: 'de', mm: 'de-DE', name: 'German',     flag: '🇩🇪' },
+  { code: 'ja', mm: 'ja-JP', name: 'Japanese',   flag: '🇯🇵' },
+];
+
+// ── STATE ──────────────────────────────────────────────────────────────
+let parsedSubs     = [];
+let translatedSubs = [];
+let sourceLang     = LANGUAGES[0]; // default English
+let targetLang     = null;
+let fileName       = '';
+
+// ── UTILS ──────────────────────────────────────────────────────────────
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function show(id) { document.getElementById(id).style.display = 'block'; }
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('s' + i).className =
+      'step' + (i < n ? ' done' : i === n ? ' active' : '');
+  }
+}
+
+// ── PARSERS ────────────────────────────────────────────────────────────
+function parseSRT(text) {
+  const blocks = text.trim().split(/\n[ \t]*\n/);
+  const result = [];
+  for (const block of blocks) {
+    const lines = block.trim().split('\n');
+    if (lines.length < 3) continue;
+    const time = lines[1].trim();
+    if (!time.includes('-->')) continue;
+    const textLines = lines.slice(2).map(l => l.replace(/<[^>]+>/g, '').trim()).filter(Boolean);
+    if (textLines.length) result.push({ index: lines[0].trim(), time, lines: textLines });
+  }
+  return result;
+}
+
+function parseVTT(text) {
+  const blocks = text.replace(/^WEBVTT[^\n]*/, '').trim().split(/\n[ \t]*\n/);
+  const result = [];
+  let idx = 1;
+  for (const block of blocks) {
+    const lines = block.trim().split('\n');
+    const ti = lines[0].includes('-->') ? 0 : 1;
+    const time = lines[ti];
+    if (!time || !time.includes('-->')) continue;
+    const textLines = lines.slice(ti + 1).map(l => l.replace(/<[^>]+>/g, '').trim()).filter(Boolean);
+    if (textLines.length) {
+      result.push({ index: ti === 0 ? String(idx) : lines[0], time, lines: textLines });
+      idx++;
+    }
+  }
+  return result;
+}
+
+// ── LANGUAGE DETECTION ─────────────────────────────────────────────────
+// Sample first 5 lines, send to MyMemory with autodetect, read detected language back
+async function detectLanguage(sampleText) {
+  try {
+    const url = 'https://api.mymemory.translated.net/get?q='
+      + encodeURIComponent(sampleText)
+      + '&langpair=autodetect|en-US';
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    // MyMemory returns detected lang in responseData.detectedLanguage or match object
+    const detected = data.responseData && data.responseData.detectedLanguage;
+    if (detected) return detected.toLowerCase().split('-')[0].split('_')[0];
+    return null;
+  } catch (e) { return null; }
+}
+
+function langFromCode(code) {
+  if (!code) return null;
+  return LANGUAGES.find(l => l.code === code || l.mm.toLowerCase().startsWith(code)) || null;
+}
+
+// ── FILE UPLOAD ─────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag-over'); });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+async function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['srt', 'vtt'].includes(ext)) { toast('Please upload a .srt or .vtt file'); return; }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      parsedSubs = ext === 'srt' ? parseSRT(e.target.result) : parseVTT(e.target.result);
+      if (!parsedSubs.length) { toast('Could not read subtitles from this file'); return; }
+
+      fileName = file.name.replace(/\.[^.]+$/, '');
+      document.getElementById('file-info-name').textContent = file.name;
+      document.getElementById('file-info-meta').textContent =
+        parsedSubs.length + ' subtitle lines · ' + (file.size / 1024).toFixed(1) + ' KB · .' + ext.toUpperCase();
+
+      hide('upload-section');
+      show('lang-section');
+      setStep(2);
+
+      // Detect language from first 5 subtitle lines
+      document.getElementById('detected-lang-display').textContent = 'Detecting...';
+      document.getElementById('detected-note').textContent = '';
+
+      const sample = parsedSubs.slice(0, 5).map(s => s.lines.join(' ')).join('. ');
+      const rawCode = await detectLanguage(sample);
+      const detected = langFromCode(rawCode);
+
+      if (detected) {
+        sourceLang = detected;
+        document.getElementById('detected-lang-display').textContent = detected.flag + ' ' + detected.name;
+        document.getElementById('detected-note').textContent = 'Subtitles will be translated FROM this language';
+      } else {
+        sourceLang = LANGUAGES[0]; // fallback English
+        document.getElementById('detected-lang-display').textContent = '🇺🇸 English (default)';
+        document.getElementById('detected-note').textContent = 'Could not auto-detect — defaulted to English. Click "Not correct?" to change.';
+      }
+
+      buildTargetGrid();
+      buildSourcePicker();
+
+    } catch (err) { toast('Error reading file: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+// ── SOURCE LANGUAGE OVERRIDE ────────────────────────────────────────────
+document.getElementById('change-source-btn').addEventListener('click', () => {
+  const picker = document.getElementById('source-picker');
+  picker.classList.toggle('open');
+});
+
+function buildSourcePicker() {
+  const grid = document.getElementById('source-picker-grid');
+  grid.innerHTML = '';
+  LANGUAGES.forEach(lang => {
+    const card = document.createElement('div');
+    card.className = 'source-pick-card' + (sourceLang && lang.code === sourceLang.code ? ' active' : '');
+    card.innerHTML = '<span>' + lang.flag + '</span><span>' + lang.name + '</span>';
+    card.addEventListener('click', () => {
+      sourceLang = lang;
+      document.getElementById('detected-lang-display').textContent = lang.flag + ' ' + lang.name;
+      document.getElementById('detected-note').textContent = 'Manually set · Subtitles will be translated FROM this language';
+      document.getElementById('source-picker').classList.remove('open');
+      // Update active state
+      document.querySelectorAll('.source-pick-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      // Rebuild target grid to update source badge
+      buildTargetGrid();
+      // Reset target selection
+      targetLang = null;
+      document.getElementById('translate-btn').disabled = true;
+    });
+    grid.appendChild(card);
+  });
+}
+
+// ── TARGET LANGUAGE GRID ────────────────────────────────────────────────
+function buildTargetGrid() {
+  const grid = document.getElementById('lang-grid');
+  grid.innerHTML = '';
+  targetLang = null;
+  document.getElementById('translate-btn').disabled = true;
+
+  LANGUAGES.forEach(lang => {
+    const card = document.createElement('div');
+    const isSource = sourceLang && lang.code === sourceLang.code;
+
+    if (isSource) {
+      card.className = 'lang-card source-card';
+      card.innerHTML =
+        '<span class="lang-flag">' + lang.flag + '</span>' +
+        '<span>' + lang.name + '</span>' +
+        '<span class="source-tag">SOURCE</span>';
+    } else {
+      card.className = 'lang-card';
+      card.innerHTML = '<span class="lang-flag">' + lang.flag + '</span><span>' + lang.name + '</span>';
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.lang-card:not(.source-card)').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        targetLang = lang;
+        document.getElementById('translate-btn').disabled = false;
+      });
+    }
+
+    grid.appendChild(card);
+  });
+}
+
+document.getElementById('translate-btn').addEventListener('click', startTranslation);
+
+// ── TRANSLATION ─────────────────────────────────────────────────────────
+// Single line translation via MyMemory
+async function translateText(text, fromMM, toMM) {
+  const url = 'https://api.mymemory.translated.net/get?q=gavindukavishka.yt@gmail.com'
+    + encodeURIComponent(text)
+    + '&langpair=' + encodeURIComponent(fromMM + '|' + toMM);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Network error');
+  const data = await res.json();
+  if (data.responseStatus === 200) {
+    const result = data.responseData.translatedText;
+    // sanity: if returned same text as input, treat as failure
+    if (result.trim().toLowerCase() === text.trim().toLowerCase()) {
+      throw new Error('No translation returned');
+    }
+    return result;
+  }
+  throw new Error(data.responseDetails || 'API error');
+}
+
+async function startTranslation() {
+  if (!sourceLang || !targetLang) return;
+  if (sourceLang.code === targetLang.code) { toast('Source and target are the same language!'); return; }
+
+  hide('lang-section');
+  show('progress-section');
+  setStep(3);
+
+  const total = parsedSubs.length;
+  translatedSubs = parsedSubs.map(s => ({ ...s, translated: [...s.lines], original_translated: null }));
+
+  const fillEl  = document.getElementById('progress-fill');
+  const countEl = document.getElementById('progress-count');
+  const subEl   = document.getElementById('progress-sub');
+
+  subEl.textContent = sourceLang.flag + ' ' + sourceLang.name + ' → ' + targetLang.flag + ' ' + targetLang.name;
+
+  let errors = 0;
+
+  for (let i = 0; i < total; i++) {
+    try {
+      // Join all lines of this subtitle into one string for translation
+      const fullText = parsedSubs[i].lines.join(' ');
+      const translated = await translateText(fullText, sourceLang.mm, targetLang.mm);
+
+      // If original had 2 lines, split the translation roughly in half
+      if (parsedSubs[i].lines.length > 1) {
+        const words = translated.split(' ');
+        const mid = Math.ceil(words.length / 2);
+        translatedSubs[i].translated = [
+          words.slice(0, mid).join(' '),
+          words.slice(mid).join(' ')
+        ].filter(Boolean);
+      } else {
+        translatedSubs[i].translated = [translated];
+      }
+    } catch (e) {
+      errors++;
+      translatedSubs[i].translated = [...parsedSubs[i].lines];
+    }
+
+    translatedSubs[i].original_translated = [...translatedSubs[i].translated];
+
+    // Update progress
+    fillEl.style.width = Math.round((i + 1) / total * 100) + '%';
+    countEl.textContent = (i + 1) + ' / ' + total + ' lines';
+
+    // Delay to respect MyMemory rate limit (~5 req/sec)
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  if (errors > 0) {
+    toast(errors + ' line(s) could not be translated — kept original text');
+  }
+
+  hide('progress-section');
+  show('editor-section');
+  setStep(4);
+  buildEditor();
+}
+
+// ── EDITOR ──────────────────────────────────────────────────────────────
+function buildEditor() {
+  document.getElementById('editor-lang-label').textContent =
+    sourceLang.flag + ' ' + sourceLang.name + ' → ' + targetLang.flag + ' ' + targetLang.name;
+  document.getElementById('editor-count-label').textContent = translatedSubs.length + ' lines';
+
+  const list = document.getElementById('subtitle-list');
+  list.innerHTML = '';
+
+  translatedSubs.forEach((sub, i) => {
+    const row = document.createElement('div');
+    row.className = 'subtitle-row';
+
+    const startTime = sub.time.split(' --> ')[0].replace(',', '.').substring(0, 8);
+    const origText  = sub.lines.join('\n');
+    const transText = sub.translated.join('\n');
+
+    row.innerHTML =
+      '<div>' +
+        '<div class="sub-index">#' + sub.index + '</div>' +
+        '<div class="sub-time">' + startTime + '</div>' +
+      '</div>' +
+      '<div class="sub-text">' + origText.replace(/\n/g, '<br>') + '</div>' +
+      '<textarea class="sub-edit" rows="' + Math.max(sub.translated.length, 1) + '">' + transText + '</textarea>' +
+      '<button class="sub-reset" title="Reset">↺</button>';
+
+    const ta = row.querySelector('.sub-edit');
+    const rb = row.querySelector('.sub-reset');
+
+    ta.addEventListener('input', () => {
+      row.classList.add('modified');
+      translatedSubs[i].translated = ta.value.split('\n');
+    });
+    rb.addEventListener('click', () => {
+      ta.value = translatedSubs[i].original_translated.join('\n');
+      translatedSubs[i].translated = [...translatedSubs[i].original_translated];
+      row.classList.remove('modified');
+    });
+
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('reset-all-btn').addEventListener('click', () => {
+  translatedSubs.forEach(s => { s.translated = [...s.original_translated]; });
+  buildEditor();
+  toast('All edits reset', 'ok');
+});
+
+document.getElementById('back-btn').addEventListener('click', () => {
+  hide('editor-section');
+  show('lang-section');
+  setStep(2);
+  targetLang = null;
+  buildTargetGrid();
+});
+
+// ── DOWNLOAD ────────────────────────────────────────────────────────────
+document.getElementById('dl-srt').addEventListener('click', () => downloadAs('srt'));
+document.getElementById('dl-vtt').addEventListener('click', () => downloadAs('vtt'));
+
+function downloadAs(fmt) {
+  const content = fmt === 'srt'
+    ? translatedSubs.map(s => s.index + '\n' + s.time + '\n' + s.translated.join('\n')).join('\n\n') + '\n'
+    : 'WEBVTT\n\n' + translatedSubs.map(s => s.index + '\n' + s.time.replace(/,/g, '.') + '\n' + s.translated.join('\n')).join('\n\n') + '\n';
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain; charset=utf-8' }));
+  a.download = fileName + '_' + sourceLang.code + '-' + targetLang.code + '.' + fmt;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast('Downloaded ' + a.download, 'ok');
+}
+</script>
+</body>
+</html>
