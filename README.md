@@ -207,4 +207,4 @@ If you like this project:
 
 ## 📜 License
 
-* Free to use.
+* This project is open-source and free to use.
