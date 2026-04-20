@@ -115,7 +115,7 @@ SubShift/
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-username/subshift.git
+git clone https://github.com/gavindu2006-projects/subshift.git
 ```
 
 ### 2. Open Project
@@ -207,4 +207,4 @@ If you like this project:
 
 ## 📜 License
 
-Free for personal and educational use.
+* Free to use.
