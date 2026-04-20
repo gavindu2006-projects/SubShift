@@ -1,10 +1,3 @@
-You’re right — the previous ones were breaking because of extra code block markers.
-
-Here is a **fully correct, single-block, clean `README.md`**.
-👉 Just **copy everything below exactly and paste into your README.md file**.
-
----
-
 # 🎬 SubShift — Subtitle Translator
 
 > ⚡ Translate, edit, and export subtitles directly in your browser — fast, simple, and free.
@@ -198,7 +191,7 @@ Increase free API usage by adding your email:
 
 ## 👨‍💻 Author
 
-**Gavindu Kavishka**
+**gavindu2006**
 
 ---
 
@@ -215,7 +208,3 @@ If you like this project:
 ## 📜 License
 
 Free for personal and educational use.
-
----
-
-If this still breaks when pasting, tell me where you're pasting (GitHub web editor, VS Code, etc.), and I’ll fix it for that exact case.
