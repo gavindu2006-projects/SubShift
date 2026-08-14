@@ -154,10 +154,10 @@ You can host this project for free using:
 
 ## 💡 Pro Tip
 
-Increase free API usage by adding your email:
+Increase free API usage by adding your email at line 851:
 
 ```
-?de=youremail@gmail.com
+'&de=' + encodeURIComponent('youremail@gmail.com');
 ```
 
 ---
